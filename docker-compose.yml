@@ -1,0 +1,30 @@
+version: '3.7'
+
+services:
+
+    djangotraefik:
+        container_name: traefik
+        image: traefik:v2.1
+        command:
+            - "--api.insecure=true"
+            - "--providers.docker"
+            - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+        restart: always
+        ports:
+            - 80:80
+            - 8080:8080
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        depends_on:
+            - django
+    
+    django:
+        build: "./djangoproject"
+        command: ["python", "manage.py", "runserver", "0.0.0.0:80"]
+        expose:
+            - "80"
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.django.rule=Host(`django.localhost`)"
+            - "traefik.http.routers.django.entrypoints=web"
